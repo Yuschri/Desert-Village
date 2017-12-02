@@ -391,6 +391,15 @@ void sphere(){
     gluSphere(qobj, 10, 20, 20);
 }
 
+void pyramid(){
+    for(int sta=25; sta>=0; sta--){
+        glPushMatrix();
+        glTranslatef(0.0, (25-sta)*15.0, 0.0);
+            balok(25*sta, 20, 25*sta);
+        glPopMatrix();
+    }
+}
+
 void atap(){
     setmaterialGold();
     cyl(0,10,0,0,25,35.35,4);
@@ -428,8 +437,8 @@ void rumahA(){
     glPopMatrix();
     glPushMatrix();
         glTranslatef(0.0, -5.0, 22.0);
-        glScalef(1.0,1.5,1.0);
-        cube(20);
+        glScalef(1.0,1.0,1.0);
+        balok(20, 30, 20);
     glPopMatrix();
 }
 
@@ -466,8 +475,8 @@ void rumahC(){
     glPopMatrix();
     glPushMatrix();
         glTranslatef(0.0, -5.0, 22.0);
-        glScalef(1.0,1.5,1.0);
-        cube(20);
+        glScalef(1.0,1.0,1.0);
+        balok(20, 30, 20);
     glPopMatrix();
 }
 
@@ -777,7 +786,12 @@ void display()
 
     glPushMatrix();
         glTranslatef(0.0,0.0,300.0);
-        balok(50, 10, 10);
+        //balok(50, 10, 10);
+    glPopMatrix();
+
+    glPushMatrix();
+        glTranslatef(0.0, 0.0, 800.0);
+        pyramid();
     glPopMatrix();
 
     glFlush();
