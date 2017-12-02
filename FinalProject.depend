@@ -1,0 +1,22 @@
+# depslib dependency file v1.0
+1511417778 source:d:\1\kuliah\grafika komputer\finalproject\camera.cpp
+	<math.h>
+	<windows.h>
+	<gl/Gl.h>
+	"Camera.h"
+
+1511322374 d:\1\kuliah\grafika komputer\finalproject\camera.h
+	<windows.h>
+	<gl\Gl.h>
+	<gl\glu.h>
+	"Vector3.h"
+
+1170708130 d:\1\kuliah\grafika komputer\finalproject\vector3.h
+	<math.h>
+
+1512019802 source:d:\1\kuliah\grafika komputer\finalproject\main.cpp
+	<glut.h>
+	<math.h>
+	<iostream>
+	"Camera.h"
+
