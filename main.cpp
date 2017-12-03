@@ -1,11 +1,21 @@
 #include <glut.h>
 #include <math.h>
 #include <iostream>
+
+#include <cmath>
+#include <cstdio>
+#include <png.h>
+
 #include "Camera.h"
 
 using namespace std;
 
 #define PI 3.14159265358979323846
+#define GL_GENERATE_MIPMAP 0x8191
+
+GLuint idtexture = -1;
+GLuint stoneTexture = -1;
+GLuint sandTexture = -1;
 
 GLfloat vertices[][3] = {{-1.0,-1.0,-1.0},{1.0,-1.0,-1.0},
                         {1.0,1.0,-1.0}, {-1.0,1.0,-1.0}, {-1.0,-1.0,1.0},
@@ -18,6 +28,74 @@ GLfloat normals[][3] = {{-1.0,-1.0,-1.0},{1.0,-1.0,-1.0},
 GLfloat colors[][3] = {{0.0,0.0,0.0},{1.0,0.0,0.0},
 {1.0,1.0,0.0}, {0.0,1.0,0.0}, {0.0,0.0,1.0},
 {1.0,0.0,1.0}, {1.0,1.0,1.0}, {0.0,1.0,1.0}};
+
+GLuint loadBmpFile(const char* fileName) {
+    GLuint texture_id;
+    unsigned char * pBitmapData;
+    int	width, height,bpp;
+
+    FILE				* fp;
+	BITMAPFILEHEADER	bmpFH;
+	BITMAPINFOHEADER	bmpIH;
+	unsigned char		temp;
+
+	fp = fopen( fileName, "rb" ); // rb = read binary
+	if( fp == NULL )
+		return( -1 );
+	// read in the file header
+	fread( ( void * )&bmpFH, sizeof( BITMAPFILEHEADER ), 1, fp );
+	if( bmpFH.bfType != 0x4D42 ) {
+		fclose( fp );
+		return( -1 );
+	}
+
+	// read in the info header
+	fread( ( void * )&bmpIH, sizeof( BITMAPINFOHEADER ), 1, fp );
+	// move the file stream to teh start of the image data
+	fseek( fp, bmpFH.bfOffBits, SEEK_SET );
+	// set size in bytes
+	bmpIH.biSizeImage = bmpIH.biHeight * bmpIH.biWidth * ( bmpIH.biBitCount / 8 );
+	// allocate mem for the image data
+	pBitmapData = new unsigned char[ bmpIH.biSizeImage ];
+	if( pBitmapData == NULL ){
+		// if there was trouble allocating the mem
+		fclose( fp );
+		return( -1 );
+	}
+	// read from the stream ( 1 byte at a time, biSizeImage times )
+	fread( ( void * )pBitmapData, 1, bmpIH.biSizeImage, fp );
+	if( pBitmapData == NULL ) {
+		fclose( fp );
+		return( -1 );
+	}
+	for( int c = 0; c < bmpIH.biSizeImage; c += 3 ) {
+		// swap the red and blue bytes
+		temp					= pBitmapData[ c ];
+		pBitmapData[ c ]		= pBitmapData[ c + 2 ];
+		pBitmapData[ c + 2 ]	= temp;
+	}
+
+	fclose( fp );
+
+	width	= bmpIH.biWidth;
+	height	= bmpIH.biHeight;
+	bpp		= bmpIH.biBitCount;
+
+	glGenTextures( 1, &texture_id );
+	// bind and pass texure data into openGL
+	glBindTexture( GL_TEXTURE_2D, texture_id );
+	// set parameters to make mipmaps
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+	// create the textures
+	glTexImage2D( GL_TEXTURE_2D, 0,
+				  GL_RGB, width, height, 0,
+				  GL_RGB, GL_UNSIGNED_BYTE, pBitmapData );
+
+    return texture_id;
+}
+
 
 //static GLdouble viewer[]= {0.0, 0.0, 10.0};
 static GLfloat theta = 0.0, speed = 0.05;
@@ -32,6 +110,7 @@ GLfloat cvertices[8][3] = {{-0.5 , -0.5, 0.5},
                            { 0.5 ,  0.5, -0.5},
                            {-0.5 ,  0.5, -0.5}
                            };
+
 Camera*	camera;
 
 void normalize(float*v)
@@ -66,6 +145,26 @@ float *calculate_normal(float *a, float *b, float *c)
     return result;
 }
 
+void myinit ()
+{
+    camera = new Camera( 100.0, 0.0, 200.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0 );
+
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_NORMALIZE);
+	glEnable(GL_AUTO_NORMAL);
+	glEnable(GL_BLEND);
+	glEnable(GL_TEXTURE_2D);
+
+	stoneTexture = loadBmpFile("stone.bmp");
+	sandTexture = loadBmpFile("sand.bmp");
+
+	//kalau pakai color langsung material
+    //glColorMaterial(GL_FRONT, GL_DIFFUSE);
+    //glEnable(GL_COLOR_MATERIAL);
+
+    glClearColor (1.0, 1.0, 1.0, 1.0);
+}
+
 void setmaterialCactus(){
     /* comment the material*/
     GLfloat amb[]={0.0f,0.45f,0.0f,1.0f};
@@ -78,18 +177,41 @@ void setmaterialCactus(){
     glMaterialf(GL_FRONT_AND_BACK,GL_SHININESS,shine);
 }
 
+void setmaterialPyramid(){
+    /* comment the material*/
+    GLfloat amb[]={0.55f,0.25f,0.0f,1.0f};
+    GLfloat diff[]={0.5f,0.49f,0.0f,1.0f};
+    GLfloat spec[]={0.0f,0.0f,0.0f,1.0f};
+    GLfloat shine=15.0f;
+    glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,amb);
+    glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,diff);
+    glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,spec);
+    glMaterialf(GL_FRONT_AND_BACK,GL_SHININESS,shine);
+}
+
+void setmaterialRumah(){
+    /* comment the material*/
+    GLfloat amb[]={0.5f,0.5f,0.2f,1.0f};
+    GLfloat diff[]={0.7f,0.65f,0.35f,1.0f};
+    GLfloat spec[]={0.0f,0.0f,0.0f,1.0f};
+    GLfloat shine=0.0f;
+    glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,amb);
+    glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,diff);
+    glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,spec);
+    glMaterialf(GL_FRONT_AND_BACK,GL_SHININESS,shine);
+}
+
 // http://www.it.hiof.no/~borres/j3d/explain/light/p-materials.html
-void setmaterialGold(){
-    float MatAmbient[] = { 0.329412f, 0.223529f, 0.027451f,1.0f };
-    float MatDiffuse[] = { 0.780392f, 0.568627f, 0.113725f, 1.0f };
-    float MatSpecular[] = { 0.992157f, 0.941176f, 0.807843f, 1.0f };
-    float MatShininess = 27.8974f;
-    float black[] = {0.0f,0.0f,0.0f,1.0f};
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, MatAmbient);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, MatDiffuse);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, MatSpecular);
-    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, MatShininess);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, black);
+void setmaterialSand(){
+    /* comment the material*/
+    GLfloat amb[]={0.85f,0.8f,0.25f,1.0f};
+    GLfloat diff[]={0.55f,0.5f,0.2f,1.0f};
+    GLfloat spec[]={0.0f,0.0f,0.0f,1.0f};
+    GLfloat shine=0.0f;
+    glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,amb);
+    glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,diff);
+    glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,spec);
+    glMaterialf(GL_FRONT_AND_BACK,GL_SHININESS,shine);
 }
 
 void setmaterialPerl(){
@@ -131,13 +253,24 @@ void setmaterialEmerald(){
     glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, black);
 }
 
-void cyl(float posisiX, float posisiY, float posisiZ, float tinggi, float lebarBawah, float lebarAtas, int sisi){
+void cyl(float posisiX, float posisiY, float posisiZ, float tinggi, float lebarBawah, float lebarAtas, int sisi,  float texture, GLint texture_skin, int detail, float derajadY){
 
     float oldX, oldY, oldZ, oldX1, oldY1, oldZ1, X, Y, Z, X1, Y1, Z1;
     oldX=lebarBawah*cos(0* PI / 180.0);
     oldZ=lebarBawah*sin(0* PI / 180.0);
     oldX1=lebarAtas*cos(0* PI / 180.0);
     oldZ1=lebarAtas*sin(0* PI / 180.0);
+
+    X=lebarBawah*cos(0* PI / 180.0);
+    Z=lebarBawah*sin(0* PI / 180.0);
+    X1=lebarAtas*cos(0* PI / 180.0);
+    Z1=lebarAtas*sin(0* PI / 180.0);
+
+    float sizeX, sizeY, texX=0, texY=0;
+
+    sizeY=abs(sqrt(pow((X+posisiX)-(oldX+posisiX),2)+pow(abs((posisiY+tinggi)-(posisiY)),2)));
+
+    glBindTexture(GL_TEXTURE_2D, texture_skin);
 
     for(int i=0; i<=360; i+=(360/sisi)){
         X=lebarBawah*cos(i* PI / 180.0);
@@ -155,41 +288,63 @@ void cyl(float posisiX, float posisiY, float posisiZ, float tinggi, float lebarB
 
         glBegin(GL_POLYGON);
         glNormal3fv(calculate_normal(vertices[0], vertices[1], vertices[2]));
-            for(int i=0; i<4; i++)
-            {
-                glVertex3fv(vertices[i]);
-            }
+            sizeX=abs(sqrt(pow(abs((X+posisiX)-(oldX+posisiX)),2)+pow(abs((Z+posisiZ)-(oldZ+posisiZ)),2)));
+
+            glTexCoord2f(texX/texture, texY/texture);
+            glVertex3fv(vertices[0]);
+            glTexCoord2f((texX)/texture, (texY+sizeY)/texture);
+
+            glVertex3fv(vertices[1]);
+            glTexCoord2f((texX+sizeX)/texture, (texY+sizeY)/texture);
+            glVertex3fv(vertices[2]);
+
+            glTexCoord2f((texX+sizeX)/texture, texY/texture);
+            glVertex3fv(vertices[3]);
         glEnd();
         oldX=X;
         oldZ=Z;
         oldX1=X1;
         oldZ1=Z1;
+        texX+=sizeX;
     }
 }
 
-void cube(float besar){
+void cube(float besar, GLuint texture_skin, float skala){
+    glBindTexture(GL_TEXTURE_2D, texture_skin);
     // Depan
     glBegin(GL_QUADS);
         glNormal3fv(calculate_normal(cvertices[0], cvertices[1], cvertices[2]));
+        glTexCoord2f(cvertices[0][0]*besar/skala, cvertices[0][1]*besar/skala);
         glVertex3f(cvertices[0][0]*besar, cvertices[0][1]*besar, cvertices[0][2]*besar);
+        glTexCoord2f(cvertices[1][0]*besar/skala, cvertices[1][1]*besar/skala);
         glVertex3f(cvertices[1][0]*besar, cvertices[1][1]*besar, cvertices[1][2]*besar);
+        glTexCoord2f(cvertices[2][0]*besar/skala, cvertices[2][1]*besar/skala);
         glVertex3f(cvertices[2][0]*besar, cvertices[2][1]*besar, cvertices[2][2]*besar);
+        glTexCoord2f(cvertices[3][0]*besar/skala, cvertices[3][1]*besar/skala);
         glVertex3f(cvertices[3][0]*besar, cvertices[3][1]*besar, cvertices[3][2]*besar);
     glEnd();
     // Atas
     glBegin(GL_QUADS);
         glNormal3fv(calculate_normal(cvertices[3], cvertices[2], cvertices[6]));
+        glTexCoord2f(cvertices[3][0]*besar/skala, cvertices[3][2]*besar/skala);
         glVertex3f(cvertices[3][0]*besar, cvertices[3][1]*besar, cvertices[3][2]*besar);
+        glTexCoord2f(cvertices[2][0]*besar/skala, cvertices[2][2]*besar/skala);
         glVertex3f(cvertices[2][0]*besar, cvertices[2][1]*besar, cvertices[2][2]*besar);
+        glTexCoord2f(cvertices[6][0]*besar/skala, cvertices[6][2]*besar/skala);
         glVertex3f(cvertices[6][0]*besar, cvertices[6][1]*besar, cvertices[6][2]*besar);
+        glTexCoord2f(cvertices[7][0]*besar/skala, cvertices[7][2]*besar/skala);
         glVertex3f(cvertices[7][0]*besar, cvertices[7][1]*besar, cvertices[7][2]*besar);
     glEnd();
     // Belakang
     glBegin(GL_QUADS);
         glNormal3fv(calculate_normal(cvertices[4], cvertices[5], cvertices[6]));
+        glTexCoord2f(cvertices[4][0]*besar/skala, cvertices[4][1]*besar/skala);
         glVertex3f(cvertices[4][0]*besar, cvertices[4][1]*besar, cvertices[4][2]*besar);
+        glTexCoord2f(cvertices[5][0]*besar/skala, cvertices[5][1]*besar/skala);
         glVertex3f(cvertices[5][0]*besar, cvertices[5][1]*besar, cvertices[5][2]*besar);
+        glTexCoord2f(cvertices[6][0]*besar/skala, cvertices[6][1]*besar/skala);
         glVertex3f(cvertices[6][0]*besar, cvertices[6][1]*besar, cvertices[6][2]*besar);
+        glTexCoord2f(cvertices[7][0]*besar/skala, cvertices[7][1]*besar/skala);
         glVertex3f(cvertices[7][0]*besar, cvertices[7][1]*besar, cvertices[7][2]*besar);
     glEnd();
     // Bawah
@@ -203,45 +358,66 @@ void cube(float besar){
     // Kiri
     glBegin(GL_QUADS);
         glNormal3fv(calculate_normal(cvertices[4], cvertices[0], cvertices[3]));
+        glTexCoord2f(cvertices[4][2]*besar/skala, cvertices[4][1]*besar/skala);
         glVertex3f(cvertices[4][0]*besar, cvertices[5][1]*besar, cvertices[5][2]*besar);
+        glTexCoord2f(cvertices[0][2]*besar/skala, cvertices[0][1]*besar/skala);
         glVertex3f(cvertices[0][0]*besar, cvertices[0][1]*besar, cvertices[0][2]*besar);
+        glTexCoord2f(cvertices[3][2]*besar/skala, cvertices[3][1]*besar/skala);
         glVertex3f(cvertices[3][0]*besar, cvertices[3][1]*besar, cvertices[3][2]*besar);
+        glTexCoord2f(cvertices[7][2]*besar/skala, cvertices[7][1]*besar/skala);
         glVertex3f(cvertices[7][0]*besar, cvertices[7][1]*besar, cvertices[7][2]*besar);
     glEnd();
     // Kanan
     glBegin(GL_QUADS);
         glNormal3fv(calculate_normal(cvertices[5], cvertices[1], cvertices[2]));
+        glTexCoord2f(cvertices[5][2]*besar/skala, cvertices[5][1]*besar/skala);
         glVertex3f(cvertices[5][0]*besar, cvertices[4][1]*besar, cvertices[4][2]*besar);
+        glTexCoord2f(cvertices[1][2]*besar/skala, cvertices[1][1]*besar/skala);
         glVertex3f(cvertices[1][0]*besar, cvertices[1][1]*besar, cvertices[1][2]*besar);
+        glTexCoord2f(cvertices[2][2]*besar/skala, cvertices[2][1]*besar/skala);
         glVertex3f(cvertices[2][0]*besar, cvertices[2][1]*besar, cvertices[2][2]*besar);
+        glTexCoord2f(cvertices[6][2]*besar/skala, cvertices[6][1]*besar/skala);
         glVertex3f(cvertices[6][0]*besar, cvertices[6][1]*besar, cvertices[6][2]*besar);
     glEnd();
-
+    glBindTexture(GL_TEXTURE_2D, -1);
 }
 
-void balok(float besarX, float besarY, float besarZ){
+void balok(float besarX, float besarY, float besarZ, GLuint texture_skin, float skala){
     // Depan
+    glBindTexture(GL_TEXTURE_2D, texture_skin);
     glBegin(GL_QUADS);
         glNormal3fv(calculate_normal(cvertices[0], cvertices[1], cvertices[2]));
+        glTexCoord2f(cvertices[0][0]*besarX/skala, cvertices[0][1]*besarY/skala);
         glVertex3f(cvertices[0][0]*besarX, cvertices[0][1]*besarY, cvertices[0][2]*besarZ);
+        glTexCoord2f(cvertices[1][0]*besarX/skala, cvertices[1][1]*besarY/skala);
         glVertex3f(cvertices[1][0]*besarX, cvertices[1][1]*besarY, cvertices[1][2]*besarZ);
+        glTexCoord2f(cvertices[2][0]*besarX/skala, cvertices[2][1]*besarY/skala);
         glVertex3f(cvertices[2][0]*besarX, cvertices[2][1]*besarY, cvertices[2][2]*besarZ);
+        glTexCoord2f(cvertices[3][0]*besarX/skala, cvertices[3][1]*besarY/skala);
         glVertex3f(cvertices[3][0]*besarX, cvertices[3][1]*besarY, cvertices[3][2]*besarZ);
     glEnd();
     // Atas
     glBegin(GL_QUADS);
         glNormal3fv(calculate_normal(cvertices[3], cvertices[2], cvertices[6]));
+        glTexCoord2f(cvertices[3][0]*besarX/skala, cvertices[3][2]*besarZ/skala);
         glVertex3f(cvertices[3][0]*besarX, cvertices[3][1]*besarY, cvertices[3][2]*besarZ);
+        glTexCoord2f(cvertices[2][0]*besarX/skala, cvertices[2][2]*besarZ/skala);
         glVertex3f(cvertices[2][0]*besarX, cvertices[2][1]*besarY, cvertices[2][2]*besarZ);
+        glTexCoord2f(cvertices[6][0]*besarX/skala, cvertices[6][2]*besarZ/skala);
         glVertex3f(cvertices[6][0]*besarX, cvertices[6][1]*besarY, cvertices[6][2]*besarZ);
+        glTexCoord2f(cvertices[7][0]*besarX/skala, cvertices[7][2]*besarZ/skala);
         glVertex3f(cvertices[7][0]*besarX, cvertices[7][1]*besarY, cvertices[7][2]*besarZ);
     glEnd();
     // Belakang
     glBegin(GL_QUADS);
         glNormal3fv(calculate_normal(cvertices[4], cvertices[5], cvertices[6]));
+        glTexCoord2f(cvertices[4][0]*besarX/skala, cvertices[4][1]*besarY/skala);
         glVertex3f(cvertices[4][0]*besarX, cvertices[4][1]*besarY, cvertices[4][2]*besarZ);
+        glTexCoord2f(cvertices[5][0]*besarX/skala, cvertices[5][1]*besarY/skala);
         glVertex3f(cvertices[5][0]*besarX, cvertices[5][1]*besarY, cvertices[5][2]*besarZ);
+        glTexCoord2f(cvertices[6][0]*besarX/skala, cvertices[6][1]*besarY/skala);
         glVertex3f(cvertices[6][0]*besarX, cvertices[6][1]*besarY, cvertices[6][2]*besarZ);
+        glTexCoord2f(cvertices[7][0]*besarX/skala, cvertices[7][1]*besarY/skala);
         glVertex3f(cvertices[7][0]*besarX, cvertices[7][1]*besarY, cvertices[7][2]*besarZ);
     glEnd();
     // Bawah
@@ -255,19 +431,28 @@ void balok(float besarX, float besarY, float besarZ){
     // Kiri
     glBegin(GL_QUADS);
         glNormal3fv(calculate_normal(cvertices[4], cvertices[0], cvertices[3]));
-        glVertex3f(cvertices[4][0]*besarX, cvertices[5][1]*besarY, cvertices[5][2]*besarZ);
+        glTexCoord2f(cvertices[5][2]*besarZ/skala, cvertices[5][1]*besarY/skala);
+        glVertex3f(cvertices[5][0]*besarX, cvertices[5][1]*besarY, cvertices[5][2]*besarZ);
+        glTexCoord2f(cvertices[0][2]*besarZ/skala, cvertices[0][1]*besarY/skala);
         glVertex3f(cvertices[0][0]*besarX, cvertices[0][1]*besarY, cvertices[0][2]*besarZ);
+        glTexCoord2f(cvertices[3][2]*besarZ/skala, cvertices[3][1]*besarY/skala);
         glVertex3f(cvertices[3][0]*besarX, cvertices[3][1]*besarY, cvertices[3][2]*besarZ);
+        glTexCoord2f(cvertices[7][2]*besarZ/skala, cvertices[7][1]*besarY/skala);
         glVertex3f(cvertices[7][0]*besarX, cvertices[7][1]*besarY, cvertices[7][2]*besarZ);
     glEnd();
     // Kanan
     glBegin(GL_QUADS);
         glNormal3fv(calculate_normal(cvertices[5], cvertices[1], cvertices[2]));
-        glVertex3f(cvertices[5][0]*besarX, cvertices[4][1]*besarY, cvertices[4][2]*besarZ);
+        glTexCoord2f(cvertices[4][2]*besarZ/skala, cvertices[4][1]*besarY/skala);
+        glVertex3f(cvertices[4][0]*besarX, cvertices[4][1]*besarY, cvertices[4][2]*besarZ);
+        glTexCoord2f(cvertices[1][2]*besarZ/skala, cvertices[1][1]*besarY/skala);
         glVertex3f(cvertices[1][0]*besarX, cvertices[1][1]*besarY, cvertices[1][2]*besarZ);
+        glTexCoord2f(cvertices[2][2]*besarZ/skala, cvertices[2][1]*besarY/skala);
         glVertex3f(cvertices[2][0]*besarX, cvertices[2][1]*besarY, cvertices[2][2]*besarZ);
+        glTexCoord2f(cvertices[6][2]*besarZ/skala, cvertices[6][1]*besarY/skala);
         glVertex3f(cvertices[6][0]*besarX, cvertices[6][1]*besarY, cvertices[6][2]*besarZ);
     glEnd();
+    glBindTexture(GL_TEXTURE_2D, -1);
 
 }
 
@@ -293,7 +478,7 @@ void floor(){
     glPushMatrix();
     glTranslatef(0.0, -20.0, 0.0);
     //glScalef(1500.0, 0.5, 1500.0);
-    balok(1500.0, 0.5, 1500.0);
+    balok(1500.0, 0.5, 1500.0, sandTexture, 100);
     glPopMatrix();
 }
 
@@ -392,24 +577,28 @@ void sphere(){
 }
 
 void pyramid(){
+    setmaterialPyramid();
+    glPushMatrix();
+    glTranslatef(0.0, -15.0, 0.0);
     for(int sta=25; sta>=0; sta--){
         glPushMatrix();
         glTranslatef(0.0, (25-sta)*15.0, 0.0);
-            balok(25*sta, 20, 25*sta);
+            balok(25*sta, 20, 25*sta, -1, 1);
         glPopMatrix();
     }
+    glPopMatrix();
 }
 
 void atap(){
-    setmaterialGold();
-    cyl(0,10,0,0,25,35.35,4);
-    cyl(0,0,0,10,35.35,35.35,4);
-    cyl(0,0,0,10,25,25,4);
-    cyl(0,0,0,0,25,35.35,4);
+    setmaterialRumah();
+    cyl(0,10,0,0,25,35.35,4, 100, stoneTexture, 1, 90);
+    cyl(0,0,0,10,35.35,35.35,4, 100, stoneTexture, 1, 90);
+    cyl(0,0,0,10,25,25,4, 100, stoneTexture, 1, 90);
+    cyl(0,0,0,0,25,35.35,4, 100, stoneTexture, 1, 90);
 }
 
 void rumah(){
-    //setmaterialEmerald();
+    setmaterialRumah();
     glPushMatrix();
         glTranslatef(0.0,25.0,0.0);
         glRotatef(45,0,1,0);
@@ -418,27 +607,27 @@ void rumah(){
     glPushMatrix();
         glTranslatef(0.0, 0.0, 0.0);
         //glScalef(50.0,50.0,50.0);
-        cube(50);
+        cube(50, stoneTexture, 50);
     glPopMatrix();
 }
 
 void rumahA(){
+    setmaterialRumah();
     glPushMatrix();
         glTranslatef(0.0, 40.0, 0.0);
         glScalef(0.9, 0.9, 0.9);
         glRotatef(45.0 ,0.0, 1.0, 0.0);
         atap();
     glPopMatrix();
-    //setmaterialEmerald();
     glPushMatrix();
         glTranslatef(0.0, 10.0, 0.0);
         glScalef(1.0,1.2,1.0);
-        cube(50);
+        cube(50, stoneTexture, 50);
     glPopMatrix();
     glPushMatrix();
         glTranslatef(0.0, -5.0, 22.0);
         glScalef(1.0,1.0,1.0);
-        balok(20, 30, 20);
+        balok(20, 30, 20, -1, 1);
     glPopMatrix();
 }
 
@@ -456,27 +645,28 @@ void rumahB(){
     glPushMatrix();
         glTranslatef(29.0, -3.0, 19.0);
         glScalef(1.0,1.0,1.0);
-        cube(35);
+        cube(35, -1, 1);
     glPopMatrix();
 
 }
 
 void rumahC(){
-    //setmaterialEmerald();
+    setmaterialRumah();
     glPushMatrix();
         glTranslatef(0.0, 30.0, 0.0);
         glRotatef(45,0,1,0);
+        glScalef(0.9,0.9,0.9);
         atap();
     glPopMatrix();
     glPushMatrix();
         glTranslatef(0.0, 5.0, 0.0);
-        glScalef(50.0,50.0,50.0);
-        cube(1);
+        glScalef(1.0,1.0,1.0);
+        cube(50, stoneTexture, 50);
     glPopMatrix();
     glPushMatrix();
         glTranslatef(0.0, -5.0, 22.0);
         glScalef(1.0,1.0,1.0);
-        balok(20, 30, 20);
+        balok(20, 30, 20, -1, 1);
     glPopMatrix();
 }
 
@@ -729,21 +919,6 @@ void setlight(){
     glEnable(GL_LIGHT0);
 }
 
-void myinit ()
-{
-    camera = new Camera( 100.0, 0.0, 200.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0 );
-
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_NORMALIZE);
-	glEnable(GL_AUTO_NORMAL);
-
-	//kalau pakai color langsung material
-    //glColorMaterial(GL_FRONT, GL_DIFFUSE);
-    //glEnable(GL_COLOR_MATERIAL);
-
-    glClearColor (1.0, 1.0, 1.0, 1.0);
-}
-
 void display()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -757,7 +932,7 @@ void display()
 
     setlight();
 
-    setmaterialPerl();
+    setmaterialSand();
     floor();
 
     glPushMatrix();
