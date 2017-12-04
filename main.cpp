@@ -147,7 +147,7 @@ float *calculate_normal(float *a, float *b, float *c)
 
 void myinit ()
 {
-    camera = new Camera( 100.0, 0.0, 200.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0 );
+    camera = new Camera( 0.0, 0.0, 750.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0 );
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_NORMALIZE);
@@ -208,6 +208,18 @@ void setmaterialSand(){
     GLfloat diff[]={0.55f,0.5f,0.2f,1.0f};
     GLfloat spec[]={0.0f,0.0f,0.0f,1.0f};
     GLfloat shine=0.0f;
+    glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,amb);
+    glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,diff);
+    glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,spec);
+    glMaterialf(GL_FRONT_AND_BACK,GL_SHININESS,shine);
+}
+
+void setmaterialMill(){
+    /* comment the material*/
+    GLfloat amb[]={1.0f,0.85f,0.28f,1.0f};
+    GLfloat diff[]={0.35f,0.35f,0.2f,1.0f};
+    GLfloat spec[]={0.2f,0.2f,0.2f,1.0f};
+    GLfloat shine=7.0f;
     glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,amb);
     glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,diff);
     glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,spec);
@@ -670,6 +682,60 @@ void rumahC(){
     glPopMatrix();
 }
 
+void millFan(){
+    glPushMatrix();
+        glRotatef(theta, 0, 0, 1);
+        glPushMatrix();
+            glRotatef(-90,1,0,0);
+            cyl(0,0,0,50,15,10,300,1,-1,1,300);
+        glPopMatrix();
+        glutSolidTorus(10,20,10,10);
+        glPushMatrix();
+            glScalef(1,1,0.2);
+            glRotatef(45, 0, 1, 0);
+            cyl(0,0,0,150,10,70,4,1,-1,1,90);
+        glPopMatrix();
+        glPushMatrix();
+            glScalef(1,1,0.2);
+            glRotatef(90, 0, 0, 1);
+            glRotatef(45, 0, 1, 0);
+            cyl(0,0,0,150,10,70,4,1,-1,1,90);
+        glPopMatrix();
+        glPushMatrix();
+            glScalef(1,1,0.2);
+            glRotatef(180, 0, 0, 1);
+            glRotatef(45, 0, 1, 0);
+            cyl(0,0,0,150,10,70,4,1,-1,1,90);
+        glPopMatrix();
+        glPushMatrix();
+            glScalef(1,1,0.2);
+            glRotatef(-90, 0, 0, 1);
+            glRotatef(45, 0, 1, 0);
+            cyl(0,0,0,150,10,70,4,1,-1,1,90);
+        glPopMatrix();
+    glPopMatrix();
+}
+
+void mill(){
+    setmaterialMill();
+    glPushMatrix();
+        glPushMatrix();
+            glRotatef(45, 0,1,0);
+            cyl(0,10,0,90,40,20,4,1,-1,1,90);
+        glPopMatrix();
+        glPushMatrix();
+            glTranslatef(0,100,0);
+            cube(45,-1,1);
+        glPopMatrix();
+        balok(70,20,70,-1,1);
+        glPushMatrix();
+            glTranslatef(0,100,33);
+            glScalef(0.4,0.4,0.4);
+            millFan();
+        glPopMatrix();
+    glPopMatrix();
+}
+
 void cactus() {
 	float vertices[][3] = {
 		{0.000000, -0.746330, -0.746330},
@@ -936,25 +1002,28 @@ void display()
     floor();
 
     glPushMatrix();
-        glTranslatef(0.0,0.0,100.0);
+        glTranslatef(500.0,0.0,500.0);
         rumah();
     glPopMatrix();
 
     glPushMatrix();
-        glTranslatef(100.0,0.0,100.0);
+        glTranslatef(350.0,0.0,350.0);
         rumahA();
     glPopMatrix();
 
-    rumahB();
+    glPushMatrix();
+        glTranslatef(250.0,0.0,350.0);
+        rumahB();
+    glPopMatrix();
 
     glPushMatrix();
-        glTranslatef(200.0,0.0,100.0);
+        glTranslatef(700.0,0.0,600.0);
         rumahC();
     glPopMatrix();
 
     setmaterialCactus();
     glPushMatrix();
-        glTranslatef(70,0,0);
+        glTranslatef(320,0,0);
         glScalef(5,7,5);
         cactus();
     glPopMatrix();
@@ -965,8 +1034,13 @@ void display()
     glPopMatrix();
 
     glPushMatrix();
-        glTranslatef(0.0, 0.0, 800.0);
+        glTranslatef(0.0, 0.0, 0.0);
         pyramid();
+    glPopMatrix();
+
+    glPushMatrix();
+        glTranslatef(-350,-10,350);
+        mill();
     glPopMatrix();
 
     glFlush();
@@ -1036,7 +1110,7 @@ switch( key )
         camera->Rotate(0.0f,-0.1f,0.0f );
         break;
     case 'r':
-        camera = new Camera( 0.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0 );
+        camera = new Camera( 0.0, 0.0, 750.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0 );
         break;
     case 'o':
         camera->MoveSide(20.0f);
@@ -1051,7 +1125,7 @@ switch( key )
    if(key == 'b' || key == 'B') spin = !spin;
 
    if(key == '-') speed-= 0.05;
-   if(key == '+') speed+= 0.05;
+   if(key == '=') speed+= 0.05;
 
 
    if(key == '1') LightPosition[0]-= 20.0f;
@@ -1119,7 +1193,7 @@ void idle()
 int main(int argc, char** argv)
 {
 	glutInit(&argc,argv);
-    glutInitWindowSize(500, 500);
+    glutInitWindowSize(1200, 700);
 	glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutCreateWindow("Dessert Village");
     myinit();
