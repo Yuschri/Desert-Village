@@ -16,6 +16,8 @@ using namespace std;
 GLuint idtexture = -1;
 GLuint stoneTexture = -1;
 GLuint sandTexture = -1;
+GLuint doorTexture = -1;
+GLuint roofTexture = -1;
 
 GLfloat vertices[][3] = {{-1.0,-1.0,-1.0},{1.0,-1.0,-1.0},
                         {1.0,1.0,-1.0}, {-1.0,1.0,-1.0}, {-1.0,-1.0,1.0},
@@ -157,6 +159,8 @@ void myinit ()
 
 	stoneTexture = loadBmpFile("stone.bmp");
 	sandTexture = loadBmpFile("sand.bmp");
+	doorTexture = loadBmpFile("door.bmp");
+	roofTexture = loadBmpFile("roof.bmp");
 
 	//kalau pakai color langsung material
     //glColorMaterial(GL_FRONT, GL_DIFFUSE);
@@ -468,6 +472,22 @@ void balok(float besarX, float besarY, float besarZ, GLuint texture_skin, float 
 
 }
 
+void bidang(float besarX, float besarY, float besarZ, GLuint texture_skin){
+    glBindTexture(GL_TEXTURE_2D, texture_skin);
+    glBegin(GL_QUADS);
+        glNormal3fv(calculate_normal(cvertices[0], cvertices[1], cvertices[2]));
+        glTexCoord2f(0, 0);
+        glVertex3f(cvertices[0][0]*besarX, cvertices[0][1]*besarY, cvertices[0][2]*besarZ);
+        glTexCoord2f(1, 0);
+        glVertex3f(cvertices[1][0]*besarX, cvertices[1][1]*besarY, cvertices[1][2]*besarZ);
+        glTexCoord2f(1, 1);
+        glVertex3f(cvertices[2][0]*besarX, cvertices[2][1]*besarY, cvertices[2][2]*besarZ);
+        glTexCoord2f(0, 1);
+        glVertex3f(cvertices[3][0]*besarX, cvertices[3][1]*besarY, cvertices[3][2]*besarZ);
+    glEnd();
+    glBindTexture(GL_TEXTURE_2D, -1);
+}
+
 void polygon(int a, int b, int c , int d)
 {
 	glBegin(GL_POLYGON);
@@ -582,10 +602,42 @@ void trapesium(){
     glEnd();
 }
 
-void sphere(){
-    GLUquadric* qobj = gluNewQuadric();
-    gluQuadricNormals(qobj, GLU_SMOOTH);
-    gluSphere(qobj, 10, 20, 20);
+void mosque(){
+    glPushMatrix();
+        balok(70, 50, 70, stoneTexture, 50);
+        cyl(0, 20, 0, 20, 20, 20, 8, 50,stoneTexture, 1, 45);
+        glPushMatrix();
+            glTranslatef(0,40,0);
+            glutSolidSphere(19,20,20);
+        glPopMatrix();
+        glPushMatrix();
+            cyl(-30, -25, -30, 70, 10, 10, 360, 50,stoneTexture, 1, 45);
+            cyl(-30, 45, -30, 20, 12, 0, 360, 50,roofTexture, 1, 45);
+        glPopMatrix();
+        glPushMatrix();
+            cyl(-30, -25, 30, 70, 10, 10, 360, 50,stoneTexture, 1, 45);
+            cyl(-30, 45, 30, 20, 12, 0, 360, 50,roofTexture, 1, 45);
+        glPopMatrix();
+        glPushMatrix();
+            cyl(30, -25, 30, 70, 10, 10, 360, 50,stoneTexture, 1, 45);
+            cyl(30, 45, 30, 20, 12, 0, 360, 50,roofTexture, 1, 45);
+        glPopMatrix();
+        glPushMatrix();
+            cyl(30, -25, -30, 70, 10, 10, 360, 50,stoneTexture, 1, 45);
+            cyl(30, 45, -30, 20, 12, 0, 360, 50,roofTexture, 1, 45);
+        glPopMatrix();
+
+        glPushMatrix();
+            glTranslatef(0.0, -8.0, 25.0);
+            glScalef(1.0,1.0,1.0);
+            cube(35, stoneTexture, 50);
+            glPushMatrix();
+                glTranslatef(0,0,0.1);
+                bidang(35,35,35,doorTexture);
+            glPopMatrix();
+        glPopMatrix();
+
+    glPopMatrix();
 }
 
 void pyramid(){
@@ -639,7 +691,11 @@ void rumahA(){
     glPushMatrix();
         glTranslatef(0.0, -5.0, 22.0);
         glScalef(1.0,1.0,1.0);
-        balok(20, 30, 20, -1, 1);
+        balok(20, 30, 20, stoneTexture, 50);
+        glPushMatrix();
+            glTranslatef(0,0,0.1);
+            bidang(20,30,20,doorTexture);
+        glPopMatrix();
     glPopMatrix();
 }
 
@@ -657,7 +713,11 @@ void rumahB(){
     glPushMatrix();
         glTranslatef(29.0, -3.0, 19.0);
         glScalef(1.0,1.0,1.0);
-        cube(35, -1, 1);
+        cube(35, stoneTexture, 50);
+        glPushMatrix();
+            glTranslatef(0,0,0.1);
+            bidang(35,35,35,doorTexture);
+        glPopMatrix();
     glPopMatrix();
 
 }
@@ -678,7 +738,11 @@ void rumahC(){
     glPushMatrix();
         glTranslatef(0.0, -5.0, 22.0);
         glScalef(1.0,1.0,1.0);
-        balok(20, 30, 20, -1, 1);
+        balok(20, 30, 20, stoneTexture, 50);
+        glPushMatrix();
+            glTranslatef(0,0,0.1);
+            bidang(20,30,20,doorTexture);
+        glPopMatrix();
     glPopMatrix();
 }
 
@@ -1023,24 +1087,24 @@ void display()
 
     setmaterialCactus();
     glPushMatrix();
-        glTranslatef(320,0,0);
+        glTranslatef(320,-15,0);
         glScalef(5,7,5);
         cactus();
     glPopMatrix();
 
     glPushMatrix();
-        glTranslatef(0.0,0.0,300.0);
-        //balok(50, 10, 10);
-    glPopMatrix();
-
-    glPushMatrix();
-        glTranslatef(0.0, 0.0, 0.0);
+        glTranslatef(0.0, 0.0, -350.0);
         pyramid();
     glPopMatrix();
 
     glPushMatrix();
         glTranslatef(-350,-10,350);
         mill();
+    glPopMatrix();
+
+    glPushMatrix();
+        glTranslatef(0,0,0);
+        mosque();
     glPopMatrix();
 
     glFlush();
