@@ -4,6 +4,7 @@
 
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <png.h>
 
 #include "Camera.h"
@@ -18,6 +19,8 @@ GLuint stoneTexture = -1;
 GLuint sandTexture = -1;
 GLuint doorTexture = -1;
 GLuint roofTexture = -1;
+
+static float rcactus[100][5];
 
 GLfloat vertices[][3] = {{-1.0,-1.0,-1.0},{1.0,-1.0,-1.0},
                         {1.0,1.0,-1.0}, {-1.0,1.0,-1.0}, {-1.0,-1.0,1.0},
@@ -100,7 +103,7 @@ GLuint loadBmpFile(const char* fileName) {
 
 
 //static GLdouble viewer[]= {0.0, 0.0, 10.0};
-static GLfloat theta = 0.0, speed = 0.05;
+static GLfloat theta = 0.0, speed = 1.0;
 static bool spin = true;
 GLfloat cvertices[8][3] = {{-0.5 , -0.5, 0.5},
                            { 0.5 , -0.5, 0.5},
@@ -147,9 +150,23 @@ float *calculate_normal(float *a, float *b, float *c)
     return result;
 }
 
+void randCactus(){
+    for(int i = 0; i< 100; i++){
+        float px = 350+(rand()%400), pz = (rand()%750);
+        float r = rand()%360;
+        float rpa = rand()%2, rpb = rand()%2;
+
+        rcactus[i][0] = px;
+        rcactus[i][1] = pz;
+        rcactus[i][2] = r;
+        rcactus[i][3] = rpa;
+        rcactus[i][4] = rpb;
+    }
+}
+
 void myinit ()
 {
-    camera = new Camera( 0.0, 0.0, 750.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0 );
+    camera = new Camera( 0.0, 500.0, 750.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0 );
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_NORMALIZE);
@@ -161,6 +178,8 @@ void myinit ()
 	sandTexture = loadBmpFile("sand.bmp");
 	doorTexture = loadBmpFile("door.bmp");
 	roofTexture = loadBmpFile("roof.bmp");
+
+	randCactus();
 
 	//kalau pakai color langsung material
     //glColorMaterial(GL_FRONT, GL_DIFFUSE);
@@ -785,13 +804,13 @@ void mill(){
     glPushMatrix();
         glPushMatrix();
             glRotatef(45, 0,1,0);
-            cyl(0,10,0,90,40,20,4,1,-1,1,90);
+            cyl(0,10,0,90,40,20,4,100,stoneTexture,1,90);
         glPopMatrix();
         glPushMatrix();
             glTranslatef(0,100,0);
-            cube(45,-1,1);
+            cube(45,stoneTexture,100);
         glPopMatrix();
-        balok(70,20,70,-1,1);
+        balok(70,20,70,stoneTexture,100);
         glPushMatrix();
             glTranslatef(0,100,33);
             glScalef(0.4,0.4,0.4);
@@ -1066,30 +1085,87 @@ void display()
     floor();
 
     glPushMatrix();
-        glTranslatef(500.0,0.0,500.0);
+        glTranslatef(700.0,0.0,700.0);
         rumah();
     glPopMatrix();
 
     glPushMatrix();
-        glTranslatef(350.0,0.0,350.0);
+        glTranslatef(-700.0,0.0,700.0);
+        rumah();
+    glPopMatrix();
+
+    glPushMatrix();
+        glTranslatef(0,30,650);
+        glRotatef(180, 0, 1, 0);
+        glScalef(2,2,2);
+        mosque();
+    glPopMatrix();
+
+    glPushMatrix();
+        glTranslatef(250.0,0.0,550.0);
+        glRotatef(180, 0, 1, 0);
+        rumahB();
+    glPopMatrix();
+
+    glPushMatrix();
+        glTranslatef(-250.0,0.0,550.0);
+        glRotatef(180, 0, 1, 0);
+        rumahB();
+    glPopMatrix();
+
+
+    glPushMatrix();
+        glTranslatef(-100.0,0.0,500.0);
+        glRotatef(180, 0, 1, 0);
+        rumahA();
+    glPopMatrix();
+
+    glPushMatrix();
+        glTranslatef(100.0,0.0,200.0);
+        glRotatef(-90, 0, 1, 0);
         rumahA();
     glPopMatrix();
 
     glPushMatrix();
         glTranslatef(250.0,0.0,350.0);
+        glRotatef(-90, 0, 1, 0);
         rumahB();
     glPopMatrix();
 
     glPushMatrix();
-        glTranslatef(700.0,0.0,600.0);
+        glTranslatef(-250.0,0.0,350.0);
+        glRotatef(90, 0, 1, 0);
+        rumahB();
+    glPopMatrix();
+
+    glPushMatrix();
+        glTranslatef(0.0,0.0,300.0);
+        glRotatef(180, 0, 1, 0);
+        rumahB();
+    glPopMatrix();
+
+    glPushMatrix();
+        glTranslatef(250.0,0.0,100.0);
+        glRotatef(-90, 0, 1, 0);
+        rumahB();
+    glPopMatrix();
+
+    glPushMatrix();
+        glTranslatef(100.0,0.0,500.0);
+        glRotatef(180, 0, 1, 0);
         rumahC();
     glPopMatrix();
 
-    setmaterialCactus();
     glPushMatrix();
-        glTranslatef(320,-15,0);
-        glScalef(5,7,5);
-        cactus();
+        glTranslatef(-100.0,0.0,200.0);
+        glRotatef(90, 0, 1, 0);
+        rumahC();
+    glPopMatrix();
+
+    glPushMatrix();
+        glTranslatef(-250,-10,100);
+        glRotatef(90, 0, 1, 0);
+        mill();
     glPopMatrix();
 
     glPushMatrix();
@@ -1097,15 +1173,28 @@ void display()
         pyramid();
     glPopMatrix();
 
+    setmaterialCactus();
     glPushMatrix();
-        glTranslatef(-350,-10,350);
-        mill();
+        glTranslatef(320,-15,0);
+        glRotatef(0.0,0,0,0);
+        glScalef(5,7,5);
+        cactus();
     glPopMatrix();
 
-    glPushMatrix();
-        glTranslatef(0,0,0);
-        mosque();
-    glPopMatrix();
+    for(int i = 0; i<100; i++){
+        int a = 1, b = 1;
+
+        if(rcactus[i][3]==0)
+            a = a*-1;
+        if(rcactus[i][4]==0)
+            b = b*-1;
+        glPushMatrix();
+            glTranslatef(rcactus[i][0]*a,-15,rcactus[i][1]*b);
+            glRotatef(rcactus[i][2],0,1,0);
+            glScalef(5,7,5);
+            cactus();
+        glPopMatrix();
+    }
 
     glFlush();
     glutSwapBuffers();
@@ -1129,7 +1218,6 @@ void reshape(int w, int h)
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }
-
 
 void keys(unsigned char key, int x, int y)
 {
@@ -1174,7 +1262,7 @@ switch( key )
         camera->Rotate(0.0f,-0.1f,0.0f );
         break;
     case 'r':
-        camera = new Camera( 0.0, 0.0, 750.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0 );
+        camera = new Camera( 0.0, 500.0, 750.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0 );
         break;
     case 'o':
         camera->MoveSide(20.0f);
@@ -1204,7 +1292,6 @@ switch( key )
 
    display();
 }
-
 
 void specialkeys(int key, int x, int y)
 {

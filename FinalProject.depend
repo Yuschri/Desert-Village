@@ -14,12 +14,13 @@
 1170708130 d:\1\kuliah\grafika komputer\finalproject\vector3.h
 	<math.h>
 
-1512383751 source:d:\1\kuliah\grafika komputer\finalproject\main.cpp
+1512393980 source:d:\1\kuliah\grafika komputer\finalproject\main.cpp
 	<glut.h>
 	<math.h>
 	<iostream>
 	<cmath>
 	<cstdio>
+	<cstdlib>
 	<png.h>
 	"Camera.h"
 
