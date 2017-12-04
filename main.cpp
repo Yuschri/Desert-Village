@@ -168,7 +168,7 @@ void myinit ()
 void setmaterialCactus(){
     /* comment the material*/
     GLfloat amb[]={0.0f,0.45f,0.0f,1.0f};
-    GLfloat diff[]={0.0f,0.2f,0.0f,0.0f};
+    GLfloat diff[]={0.0f,0.1f,0.0f,0.0f};
     GLfloat spec[]={0.0f,0.0f,0.0f,0.0f};
     GLfloat shine=0.1f;
     glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,amb);
@@ -431,8 +431,8 @@ void balok(float besarX, float besarY, float besarZ, GLuint texture_skin, float 
     // Kiri
     glBegin(GL_QUADS);
         glNormal3fv(calculate_normal(cvertices[4], cvertices[0], cvertices[3]));
-        glTexCoord2f(cvertices[5][2]*besarZ/skala, cvertices[5][1]*besarY/skala);
-        glVertex3f(cvertices[5][0]*besarX, cvertices[5][1]*besarY, cvertices[5][2]*besarZ);
+        glTexCoord2f(cvertices[4][2]*besarZ/skala, cvertices[4][1]*besarY/skala);
+        glVertex3f(cvertices[4][0]*besarX, cvertices[4][1]*besarY, cvertices[4][2]*besarZ);
         glTexCoord2f(cvertices[0][2]*besarZ/skala, cvertices[0][1]*besarY/skala);
         glVertex3f(cvertices[0][0]*besarX, cvertices[0][1]*besarY, cvertices[0][2]*besarZ);
         glTexCoord2f(cvertices[3][2]*besarZ/skala, cvertices[3][1]*besarY/skala);
@@ -443,8 +443,8 @@ void balok(float besarX, float besarY, float besarZ, GLuint texture_skin, float 
     // Kanan
     glBegin(GL_QUADS);
         glNormal3fv(calculate_normal(cvertices[5], cvertices[1], cvertices[2]));
-        glTexCoord2f(cvertices[4][2]*besarZ/skala, cvertices[4][1]*besarY/skala);
-        glVertex3f(cvertices[4][0]*besarX, cvertices[4][1]*besarY, cvertices[4][2]*besarZ);
+        glTexCoord2f(cvertices[5][2]*besarZ/skala, cvertices[5][1]*besarY/skala);
+        glVertex3f(cvertices[5][0]*besarX, cvertices[5][1]*besarY, cvertices[5][2]*besarZ);
         glTexCoord2f(cvertices[1][2]*besarZ/skala, cvertices[1][1]*besarY/skala);
         glVertex3f(cvertices[1][0]*besarX, cvertices[1][1]*besarY, cvertices[1][2]*besarZ);
         glTexCoord2f(cvertices[2][2]*besarZ/skala, cvertices[2][1]*besarY/skala);
@@ -583,7 +583,7 @@ void pyramid(){
     for(int sta=25; sta>=0; sta--){
         glPushMatrix();
         glTranslatef(0.0, (25-sta)*15.0, 0.0);
-            balok(25*sta, 20, 25*sta, -1, 1);
+            balok(25*sta, 20, 25*sta, stoneTexture, 100);
         glPopMatrix();
     }
     glPopMatrix();
@@ -615,7 +615,7 @@ void rumahA(){
     setmaterialRumah();
     glPushMatrix();
         glTranslatef(0.0, 40.0, 0.0);
-        glScalef(0.9, 0.9, 0.9);
+        glScalef(0.85, 0.85, 0.85);
         glRotatef(45.0 ,0.0, 1.0, 0.0);
         atap();
     glPopMatrix();
@@ -655,7 +655,7 @@ void rumahC(){
     glPushMatrix();
         glTranslatef(0.0, 30.0, 0.0);
         glRotatef(45,0,1,0);
-        glScalef(0.9,0.9,0.9);
+        glScalef(1.2,1.2,1.2);
         atap();
     glPopMatrix();
     glPushMatrix();
